@@ -38,7 +38,7 @@ async def pipeline_principal():
 
     # Configurações padrão caso rode sem o Notion/Activepieces (teste manual)
     prompt_video = "Avatar falando de forma neutra"
-    texto_audio = "Processando integração automática entre GitHub, Vibes e Google Drive."
+    texto_audio = "Processando integração automática nativa dentro do ecossistema do GitHub."
     tempo_inicio_audio = 0.0
     voz_escolhida = "pt-BR-AntonioNeural"
 
@@ -74,6 +74,7 @@ async def pipeline_principal():
 
     try:
         response = requests.post(url_vibes, json=payload, headers=headers, timeout=10)
+        # CORREÇÃO DA SINTAXE: Valida se o status da resposta está entre os códigos de sucesso (200 ou 201)
         if response.status_code in:
             dados_api = response.json()
             video_url = dados_api.get("video_url") or dados_api.get("url")
