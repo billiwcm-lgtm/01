@@ -1,0 +1,45 @@
+name: Fluxo de Geracao e Edicao de Video
+
+on:
+  workflow_dispatch: # Permite que você clique em um botão no GitHub para rodar manualmente
+  schedule:
+    - cron: '0 * * * *' # Opcional: Roda automaticamente de 1 em 1 hora, se quiser produção em massa
+
+jobs:
+  gerar-e-editar:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Baixa o código do seu repositório (onde deve estar o seu audio_padrao.mp3)
+    - name: Checkout do código
+      uses: actions/checkout@v4
+
+    # 2. Configura o ambiente Python
+    - name: Configurar Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    # 3. Instala as dependências de código
+    - name: Instalar dependencias do Python
+      run: |
+        pip install requests
+
+    # 4. Instala o FFmpeg no servidor do GitHub para juntar o áudio e vídeo
+    - name: Instalar FFmpeg
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ffmpeg
+
+    # 5. Executa o script injetando seus cookies de forma segura
+    - name: Executar Script de Geração e Edição
+      env:
+        VIBES_COOKIES: ${{ secrets.VIBES_COOKIES }}
+      run: python gerar_e_editar.py
+
+    # 6. Salva o vídeo final gerado para você poder baixar direto do GitHub
+    - name: Salvar Vídeo Final
+      uses: actions/upload-artifact@v4
+      with:
+        name: videos-gerados
+        path: video_com_audio.mp4
