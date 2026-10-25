@@ -1,37 +1,48 @@
-name: Pipeline Geração e Edição de Vídeo com Pastas
+name: Pipeline IA - Motor de Mídia e Envio ao Google Drive
 
 on:
+  repository_dispatch:
+    types: [disparar_geracao_ia]
   workflow_dispatch:
+    inputs:
+      texto_teste:
+        description: 'Texto para teste manual'
+        required: false
+        default: 'Teste de envio automático direto para o Google Drive.'
 
 jobs:
-  construir-video:
+  processar-e-enviar:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout do Repositório
+    - name: 1. Baixando Código do Repositório
       uses: actions/checkout@v4
 
-    - name: Configurar Python
+    - name: 2. Configurando Ambiente Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.10'
 
-    - name: Instalar Dependências do Python
-      run: pip install requests
+    - name: 3. Instalar Dependências do Python
+      run: pip install -r requirements.txt
 
-    - name: Instalar FFmpeg
+    - name: 4. Instalar FFmpeg e Rclone (Para o Google Drive)
       run: |
         sudo apt-get update
-        sudo apt-get install -y ffmpeg
+        sudo apt-get install -y ffmpeg rclone
 
-    - name: Executar Automação de Mídias
+    - name: 5. Configurar Credenciais do Rclone
+      run: |
+        mkdir -p ~/.config/rclone
+        echo "${{ secrets.RCLONE_CONFIG_DATA }}" > ~/.config/rclone/rclone.conf
+
+    - name: 6. Executar Automação de Vídeo e Áudio
       env:
         VIBES_COOKIES: ${{ secrets.VIBES_COOKIES }}
+        DADOS_NOTION_JSON: ${{ github.event.client_payload && jsonEncode(github.event.client_payload) || format('{{\"texto_audio\":\"{0}\"}}', github.event.inputs.texto_teste) }}
       run: python gerar_e_editar.py
 
-    # Faz o upload de toda a pasta de vídeos finais salvos pelo script
-    - name: Upload da Pasta de Vídeos Prontos
-      uses: actions/upload-artifact@v4
-      with:
-        name: producao-videos-finais
-        path: videos_finais/
+    - name: 7. Upload do Vídeo Diretamente para o Google Drive
+      run: |
+        # Envia todo o conteúdo da pasta 'videos_finais' para a pasta remota configurada no Google Drive
+        rclone copy videos_finais/ gdrive:videos_gerados_ia -P
